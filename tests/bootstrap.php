@@ -72,7 +72,6 @@ function cleanTestDatabases(): void {
 // Register cleanup function
 register_shutdown_function('cleanTestDatabases');
 
-echo "YetiSearch Test Suite" . PHP_EOL;
+echo "Nerdearla - YetiSearch Test Suite" . PHP_EOL;
 echo "PHP Version: " . PHP_VERSION . PHP_EOL;
-echo "Test Directory: " . YETISEARCH_TEST_ROOT . PHP_EOL;
 echo str_repeat('-', 50) . PHP_EOL;

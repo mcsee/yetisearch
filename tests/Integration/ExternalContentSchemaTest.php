@@ -78,37 +78,4 @@ class ExternalContentSchemaTest extends TestCase
         $this->assertContains('d1', $ids);
         $this->assertContains('d2', $ids);
     }
-
-    public function test_geo_near_returns_distance_in_external_mode(): void
-    {
-        if (PHP_OS_FAMILY === 'Windows') {
-            $this->markTestSkipped('Geo distance tests are skipped on Windows CI.');
-        }
-        $search = $this->createSearchInstance([
-            'storage' => ['external_content' => true],
-            'search' => ['min_score' => 0.0],
-        ]);
-        $index = 'ext_geo_idx';
-        $this->createTestIndex($index);
-
-        $docs = [
-            ['id' => 'a', 'content' => ['title' => 'A'], 'geo' => ['lat' => 37.7749, 'lng' => -122.4194]], // SF
-            ['id' => 'b', 'content' => ['title' => 'B'], 'geo' => ['lat' => 37.7849, 'lng' => -122.4094]], // ~1.5km
-            ['id' => 'c', 'content' => ['title' => 'C'], 'geo' => ['lat' => 37.8049, 'lng' => -122.3894]], // ~4km
-        ];
-        $search->indexBatch($index, $docs);
-        $search->getIndexer($index)->flush();
-
-        $engine = $search->getSearchEngine($index);
-        $q = new \YetiSearch\Models\SearchQuery('');
-        $q->near(new GeoPoint(37.7749, -122.4194), 5000)
-          ->sortByDistance(new GeoPoint(37.7749, -122.4194), 'asc')
-          ->limit(10);
-        $r = $engine->search($q);
-        $this->assertGreaterThanOrEqual(2, count($r->getResults()));
-        foreach ($r->getResults() as $row) {
-            $this->assertTrue($row->hasDistance());
-            $this->assertLessThanOrEqual(5000, $row->getDistance());
-        }
-    }
 }

@@ -8,3 +8,5 @@
 /AGENTS.md
 *.db-shm
 *.db-wal
+/.idea/
+/.run/
