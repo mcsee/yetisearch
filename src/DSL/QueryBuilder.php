@@ -5,6 +5,7 @@ namespace YetiSearch\DSL;
 use YetiSearch\Models\SearchQuery;
 use YetiSearch\YetiSearch;
 use YetiSearch\Exceptions\InvalidArgumentException;
+use YetiSearch\Utils\LikeOptimizer;
 
 /**
  * QueryBuilder provides multiple query interfaces for YetiSearch
@@ -264,7 +265,8 @@ class FluentQuery
     
     public function where(string $field, $value, string $operator = '='): self
     {
-        $this->searchQuery->filter($field, $value, $operator);
+        // Ensure consistent filter structure: field, operator, value
+        $this->searchQuery->filter($field, strtolower($operator), $value);
         return $this;
     }
     
@@ -391,7 +393,10 @@ class FluentQuery
             throw new InvalidArgumentException('Index not specified. Use in() method to set the index.');
         }
         
-        return $this->builder->executeSearch($this->index, $this->searchQuery);
+        // Get the optimized search query
+        $searchQuery = $this->toSearchQuery();
+        
+        return $this->builder->executeSearch($this->index, $searchQuery);
     }
     
     public function first(): ?array
@@ -420,11 +425,134 @@ class FluentQuery
     
     public function toSearchQuery(): SearchQuery
     {
-        return $this->searchQuery;
+        $filters = $this->searchQuery->getFilters();
+        if (empty($filters)) {
+            return $this->searchQuery;
+        }
+
+        $likeFilters = [];
+        $otherFilters = [];
+
+        foreach ($filters as $filter) {
+            if (strtolower($filter['operator'] ?? '') === 'like' && 
+                isset($filter['field']) && 
+                is_string($filter['value'])) {
+                $likeFilters[] = $filter;
+            } else {
+                $otherFilters[] = $filter;
+            }
+        }
+
+        if (empty($likeFilters)) {
+            return $this->searchQuery;
+        }
+
+        $likeByField = [];
+        foreach ($likeFilters as $filter) {
+            $field = $filter['field'];
+            $value = rtrim($filter['value'], '%');
+            $likeByField[$field][] = $value;
+        }
+
+        $optimizedFilters = [];
+
+        foreach ($likeByField as $field => $patterns) {
+            $patterns = array_unique($patterns);
+
+            if (count($patterns) === 1) {
+                $optimizedFilters[] = [
+                    'field' => $field,
+                    'operator' => 'like',
+                    'value' => $patterns[0] . '%'
+                ];
+                continue;
+            }
+
+            sort($patterns);
+
+            $prefix = '';
+            $first = $patterns[0];
+            $last = end($patterns);
+            
+            $length = min(strlen($first), strlen($last));
+            for ($i = 0; $i < $length; $i++) {
+                if ($first[$i] === $last[$i]) {
+                    $prefix .= $first[$i];
+                } else {
+                    break;
+                }
+            }
+
+            if (empty($prefix)) {
+                $prefix = $patterns[0];
+            }
+            
+            $optimizedFilters[] = [
+                'field' => $field,
+                'operator' => 'like',
+                'value' => $prefix . '%'
+            ];
+        }
+
+        $newQuery = new SearchQuery($this->searchQuery->getQuery());
+
+        foreach (array_merge($otherFilters, $optimizedFilters) as $filter) {
+            $newQuery->filter($filter['field'], $filter['value'], $filter['operator']);
+        }
+
+        $newQuery->limit($this->searchQuery->getLimit());
+        $newQuery->offset($this->searchQuery->getOffset());
+
+        if ($this->searchQuery->getSort()) {
+            foreach ($this->searchQuery->getSort() as $field => $direction) {
+                $newQuery->sortBy($field, $direction);
+            }
+        }
+        
+        return $newQuery;
     }
     
     public function toArray(): array
     {
         return $this->searchQuery->toArray();
+    }
+
+    private function longestCommonPrefix(array $strings): string
+    {
+        if (empty($strings)) {
+            return '';
+        }
+
+        if (count($strings) === 1) {
+            return $strings[0];
+        }
+
+        usort($strings, function($a, $b) {
+            return strlen($a) - strlen($b);
+        });
+        
+        $shortest = $strings[0];
+        $length = strlen($shortest);
+        $prefix = '';
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $shortest[$i];
+            $match = true;
+            
+            foreach ($strings as $string) {
+                if ($i >= strlen($string) || $string[$i] !== $char) {
+                    $match = false;
+                    break;
+                }
+            }
+            
+            if ($match) {
+                $prefix .= $char;
+            } else {
+                break;
+            }
+        }
+        
+        return $prefix;
     }
 }

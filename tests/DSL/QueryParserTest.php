@@ -268,4 +268,23 @@ class QueryParserTest extends TestCase
         
         $this->assertEquals(count($filters1), count($filters2));
     }
+    
+    public function testOptimizesLikePrefixesInQueryBuilder(): void
+    {
+        $config = ['storage' => ['path' => ':memory:']];
+        $yeti = new YetiSearch($config);
+        $builder = new QueryBuilder($yeti);
+
+        $query = $builder->query('')
+            ->where('title', 'LIKE', 'programa%')
+            ->where('title', 'LIKE', 'programacion%');
+            
+        $searchQuery = $query->toSearchQuery();
+        $filters = $searchQuery->getFilters();
+
+        $this->assertCount(1, $filters, 'Debería haber solo 1 filtros después de la optimización');
+        $this->assertEquals('programa%', $filters[0]['value'],
+            'El valor del filtro optimizado debería ser el prefijo común con un % al final');
+        
+        }
 }
