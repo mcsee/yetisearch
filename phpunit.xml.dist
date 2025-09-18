@@ -11,8 +11,15 @@
          convertDeprecationsToExceptions="true"
          failOnRisky="true"
          failOnWarning="true"
-         verbose="true"
-         colors="true">
+         verbose="false"
+         colors="true"
+         printerClass="PHPUnit\TextUI\DefaultResultPrinter"
+         stopOnError="false"
+         stopOnFailure="false"
+         stopOnIncomplete="false"
+         stopOnSkipped="false"
+         stopOnRisky="false"
+         stopOnWarning="false">
     
     <testsuites>
         <testsuite name="Unit">
