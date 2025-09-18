@@ -8,6 +8,6 @@ final class LikeOptimizer
 {
     public function optimize(array $filters): array
     {
-        return [];
+        return $filters;
     }
 }

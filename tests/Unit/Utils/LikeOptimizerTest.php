@@ -16,4 +16,12 @@ final class LikeOptimizerTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    public function testGivenSingleElementArrayWhenOptimizeThenReturnSameElement(): void
+    {
+        $optimizer = new LikeOptimizer();
+        $input = ['neron'];
+        $result = $optimizer->optimize($input);
+        $this->assertEquals($input, $result);
+    }
 }
