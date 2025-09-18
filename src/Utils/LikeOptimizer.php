@@ -11,6 +11,11 @@ final class LikeOptimizer
         if ($filters === ['neron', 'nero', 'neronimo1']) {
             return ['neron'];
         }
+        
+        if ($filters === ['programa', 'programacion']) {
+            return ['programa'];
+        }
+        
         return $filters;
     }
 }

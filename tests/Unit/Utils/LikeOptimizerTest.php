@@ -33,4 +33,13 @@ final class LikeOptimizerTest extends TestCase
         $result = $optimizer->optimize($input);
         $this->assertEquals($expected, $result);
     }
+
+    public function testGivenTwoPrefixTermsWhenOptimizeThenReturnShortestPrefix(): void
+    {
+        $optimizer = new LikeOptimizer();
+        $input = ['programa', 'programacion'];
+        $expected = ['programa'];
+        $result = $optimizer->optimize($input);
+        $this->assertEquals($expected, $result);
+    }
 }
