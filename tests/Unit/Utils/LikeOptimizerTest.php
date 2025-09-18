@@ -24,4 +24,13 @@ final class LikeOptimizerTest extends TestCase
         $result = $optimizer->optimize($input);
         $this->assertEquals($input, $result);
     }
+
+    public function testGivenMultipleElementsWithCommonPrefixWhenOptimizeThenReturnShortestPrefix(): void
+    {
+        $optimizer = new LikeOptimizer();
+        $input = ['neron', 'nero', 'neronimo1'];
+        $expected = ['neron'];
+        $result = $optimizer->optimize($input);
+        $this->assertEquals($expected, $result);
+    }
 }
