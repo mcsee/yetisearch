@@ -8,14 +8,18 @@ final class LikeOptimizer
 {
     public function optimize(array $filters): array
     {
-        if ($filters === ['neron', 'nero', 'neronimo1']) {
-            return ['neron'];
+        if (count($filters) < 2) return $filters;
+        
+        $shortest = $filters[0];
+        foreach ($filters as $filter) {
+            if (!str_contains($filter, $shortest) && !str_contains($shortest, $filter)) {
+                return $filters;
+            }
+            if (strlen($filter) < strlen($shortest)) {
+                $shortest = $filter;
+            }
         }
         
-        if ($filters === ['programa', 'programacion']) {
-            return ['programa'];
-        }
-        
-        return $filters;
+        return [$shortest];
     }
 }

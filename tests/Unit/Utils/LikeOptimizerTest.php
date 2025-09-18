@@ -29,7 +29,7 @@ final class LikeOptimizerTest extends TestCase
     {
         $optimizer = new LikeOptimizer();
         $input = ['neron', 'nero', 'neronimo1'];
-        $expected = ['neron'];
+        $expected = ['nero'];
         $result = $optimizer->optimize($input);
         $this->assertEquals($expected, $result);
     }
